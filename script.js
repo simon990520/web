@@ -30,6 +30,47 @@ const addressForm = document.getElementById('addressForm');
 const paymentForm = document.getElementById('paymentForm');
 const finishCheckout = document.getElementById('finishCheckout');
 
+// Selectores de ubicación
+const departmentSelect = document.getElementById('departmentSelect');
+const municipalitySelect = document.getElementById('municipalitySelect');
+
+// Poblar departamentos al iniciar
+function initLocations() {
+    // Referencias locales para asegurar que existan
+    const deptSelect = document.getElementById('departmentSelect');
+    const muniSelect = document.getElementById('municipalitySelect');
+
+    if (!deptSelect || typeof COLOMBIA_DATA === 'undefined') {
+        console.warn('Location elements or data not found');
+        return;
+    }
+
+    const departments = Object.keys(COLOMBIA_DATA).sort();
+    departments.forEach(dept => {
+        const option = document.createElement('option');
+        option.value = dept;
+        option.textContent = dept;
+        deptSelect.appendChild(option);
+    });
+
+    deptSelect.addEventListener('change', (e) => {
+        const selectedDept = e.target.value;
+        muniSelect.innerHTML = '<option value="">Seleccionar</option>';
+
+        if (selectedDept && COLOMBIA_DATA[selectedDept]) {
+            muniSelect.disabled = false;
+            COLOMBIA_DATA[selectedDept].forEach(muni => {
+                const option = document.createElement('option');
+                option.value = muni;
+                option.textContent = muni;
+                muniSelect.appendChild(option);
+            });
+        } else {
+            muniSelect.disabled = true;
+        }
+    });
+}
+
 // Dibujar la ruleta
 function drawWheel() {
     const centerX = canvas.width / 2;
@@ -256,3 +297,4 @@ window.addEventListener('resize', () => {
 
 // Inicializar
 drawWheel();
+initLocations();

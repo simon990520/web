@@ -86,22 +86,36 @@
                 <p class="security-note"><span class="lock-icon">🔒</span> Todos los datos están protegidos</p>
 
                 <form id="addressForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nombre *</label>
+                            <input type="text" id="firstName" placeholder="Ej. Juan" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Apellido *</label>
+                            <input type="text" id="lastName" placeholder="Ej. Pérez" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Número de documento *</label>
+                            <input type="text" id="documentId" placeholder="CC / CE" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Correo electrónico *</label>
+                            <input type="email" id="email" placeholder="ejemplo@correo.com" required>
+                        </div>
+                    </div>
                     <div class="form-group">
                         <label>Departamento *</label>
-                        <select required>
+                        <select id="departmentSelect" required>
                             <option value="">Seleccionar</option>
-                            <option value="antioquia">Antioquia</option>
-                            <option value="bogota">Bogotá D.C.</option>
-                            <option value="valle">Valle del Cauca</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>Municipio *</label>
-                        <select required>
+                        <select id="municipalitySelect" required disabled>
                             <option value="">Seleccionar</option>
-                            <option value="medellin">Medellín</option>
-                            <option value="bogota">Bogotá</option>
-                            <option value="cali">Cali</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -113,10 +127,6 @@
                     <div class="form-group">
                         <label>Información adicional (opcional)</label>
                         <input type="text" placeholder="Piso/Edificio/Fachada/Otro">
-                    </div>
-                    <div class="form-checkbox">
-                        <input type="checkbox" id="defaultAddr">
-                        <label for="defaultAddr">Establecer como mi dirección predeterminada</label>
                     </div>
                     <button type="submit" class="checkout-btn">Guardar</button>
                 </form>
@@ -229,6 +239,7 @@
         </div>
     </div>
 
+    <script src="colombia_data.js"></script>
     <script src="script.js"></script>
 </body>
 
