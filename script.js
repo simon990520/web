@@ -15,14 +15,20 @@ const wheelConfig = {
 let isSpinning = false;
 let currentRotation = 0;
 
-// Elementos del DOM
+// Elementos del DOM - Ruleta y Modal Inicial
 const canvas = document.getElementById('wheel');
 const ctx = canvas.getContext('2d');
 const spinButton = document.getElementById('spinButton');
-const modal = document.getElementById('prizeModal');
+const prizeModal = document.getElementById('prizeModal');
 const claimButton = document.getElementById('claimButton');
-const copyButton = document.getElementById('copyButton');
 const confettiCanvas = document.getElementById('confetti');
+
+// Elementos del DOM - Checkout
+const checkoutContainer = document.getElementById('checkoutContainer');
+const closeCheckout = document.getElementById('closeCheckout');
+const addressForm = document.getElementById('addressForm');
+const paymentForm = document.getElementById('paymentForm');
+const finishCheckout = document.getElementById('finishCheckout');
 
 // Dibujar la ruleta
 function drawWheel() {
@@ -96,7 +102,7 @@ function spinWheel() {
 
     // Mostrar modal después de la animación
     setTimeout(() => {
-        showModal();
+        showPrizeModal();
         launchConfetti();
         isSpinning = false;
         spinButton.disabled = false;
@@ -104,53 +110,34 @@ function spinWheel() {
     }, 4000);
 }
 
-// Mostrar modal
-function showModal() {
-    modal.classList.add('show');
-    playSuccessSound();
+// Mostrar modal de premio inicial
+function showPrizeModal() {
+    if (prizeModal) prizeModal.classList.add('show');
 }
 
-// Cerrar modal
-function closeModal() {
-    modal.classList.remove('show');
-}
-
-// Copiar código promocional
-function copyPromoCode() {
-    const promoCode = document.getElementById('promoCode').textContent;
-
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(promoCode).then(() => {
-            showCopyFeedback();
-        });
-    } else {
-        // Fallback para navegadores antiguos
-        const input = document.createElement('input');
-        input.value = promoCode;
-        document.body.appendChild(input);
-        input.select();
-        document.execCommand('copy');
-        document.body.removeChild(input);
-        showCopyFeedback();
+// Transición al Checkout
+function goToCheckout() {
+    if (prizeModal) prizeModal.classList.remove('show');
+    if (checkoutContainer) {
+        checkoutContainer.style.display = 'flex';
+        showStep(1);
     }
 }
 
-// Feedback al copiar
-function showCopyFeedback() {
-    const originalText = copyButton.textContent;
-    copyButton.textContent = '✓';
-    copyButton.style.background = 'rgba(0, 255, 0, 0.3)';
+// Manejo de pasos del checkout
+function showStep(stepNumber) {
+    document.querySelectorAll('.checkout-step').forEach(step => step.classList.remove('active'));
+    document.querySelectorAll('.step').forEach(indicator => indicator.classList.remove('active'));
 
-    setTimeout(() => {
-        copyButton.textContent = originalText;
-        copyButton.style.background = '';
-    }, 1500);
-}
+    const targetStep = document.getElementById(`step${stepNumber}`);
+    const targetIndicator = document.getElementById(`step${stepNumber}-indicator`);
 
-// Efecto de sonido simulado (visual)
-function playSuccessSound() {
-    // Aquí podrías agregar un sonido real si lo deseas
-    console.log('🎉 ¡Felicidades!');
+    if (targetStep) targetStep.classList.add('active');
+    if (targetIndicator) targetIndicator.classList.add('active');
+
+    // Desplazar al inicio del modal en móvil
+    const modalContent = document.querySelector('.checkout-modal');
+    if (modalContent) modalContent.scrollTop = 0;
 }
 
 // Sistema de Confetti
@@ -175,7 +162,7 @@ class ConfettiPiece {
         this.x += this.speedX;
         this.rotation += this.rotationSpeed;
 
-        if (this.y > confettiCanvas.height - 100) {
+        if (this.y > (window.innerHeight || 800)) {
             this.opacity -= 0.02;
         }
     }
@@ -232,15 +219,32 @@ function launchConfetti() {
 
 // Event Listeners
 spinButton.addEventListener('click', spinWheel);
-copyButton.addEventListener('click', copyPromoCode);
-claimButton.addEventListener('click', () => {
-    alert('🎉 ¡Redirigiendo a la página de reclamación!');
-    // Aquí podrías redirigir a una URL real
-    // window.location.href = 'https://temu.com/...';
+
+claimButton.addEventListener('click', goToCheckout);
+
+closeCheckout.addEventListener('click', () => {
+    checkoutContainer.style.display = 'none';
 });
 
-// Cerrar modal al hacer clic en el overlay
-document.querySelector('.modal-overlay').addEventListener('click', closeModal);
+addressForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    showStep(2);
+});
+
+paymentForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    showStep(3);
+    launchConfetti(); // Festejo final
+});
+
+finishCheckout.addEventListener('click', () => {
+    window.location.reload();
+});
+
+// Cerrar modal al hacer clic en el overlay (solo para el premio inicial)
+document.querySelector('.modal-overlay').addEventListener('click', () => {
+    if (prizeModal) prizeModal.classList.remove('show');
+});
 
 // Ajustar canvas en resize
 window.addEventListener('resize', () => {
