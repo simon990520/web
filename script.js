@@ -80,10 +80,15 @@ function spinWheel() {
     // Calcular rotación para que siempre caiga en iPhone 16 Pro
     const segmentAngle = 360 / wheelConfig.segments.length;
     const targetAngle = wheelConfig.winningIndex * segmentAngle;
-    const spins = 5; // Número de vueltas completas
-    const finalRotation = (spins * 360) + (360 - targetAngle) + (segmentAngle / 2);
+    const spins = 8; // Aumentar vueltas para más suspenso
 
-    const totalRotation = currentRotation + finalRotation;
+    // El offset de -Math.PI/2 en drawWheel significa que el primer segmento empieza en la parte superior.
+    // Para que caiga en la flecha (arriba), necesitamos rotar para que el segmento 0 esté en la posición 0.
+    const finalRotation = (spins * 360) - targetAngle;
+
+    // Añadimos un pequeño desplazamiento aleatorio dentro del segmento ganador (+/- 10 grados del centro)
+    const randomOffset = (Math.random() * 20) - 10;
+    const totalRotation = currentRotation + finalRotation + randomOffset;
 
     // Animar la ruleta
     canvas.style.transform = `rotate(${totalRotation}deg)`;
