@@ -508,6 +508,16 @@ body::before {
     }
 }
 
+@keyframes shimmer {
+    0% {
+        transform: translateX(-150%) skewX(-25deg);
+    }
+
+    100% {
+        transform: translateX(250%) skewX(-25deg);
+    }
+}
+
 /* Checkout Container */
 .checkout-container {
     position: fixed;
@@ -673,6 +683,22 @@ body::before {
     cursor: pointer;
     box-shadow: 0 4px 15px rgba(251, 119, 1, 0.3);
     transition: transform 0.2s, background 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.checkout-btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(to right,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.4) 50%,
+            rgba(255, 255, 255, 0) 100%);
+    animation: shimmer 2s infinite ease-in-out;
 }
 
 .checkout-btn:active {
@@ -748,11 +774,28 @@ body::before {
 .form-row {
     display: flex;
     gap: 15px;
+    align-items: flex-end !important;
+}
+
+.form-row .form-group {
+    flex: 1;
+    margin-bottom: 20px;
 }
 
 .date-inputs {
     display: flex;
     gap: 10px;
+}
+
+@media (max-width: 480px) {
+    .form-row {
+        gap: 10px;
+    }
+
+    .date-inputs select {
+        padding: 12px 8px;
+        font-size: 0.9rem;
+    }
 }
 
 /* Success Step */
