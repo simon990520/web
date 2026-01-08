@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Gira y Gana un iPhone 16 Pro!</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Partículas de confetti -->
+    <canvas id="confetti"></canvas>
+
+    <div class="container">
+        <!-- Encabezado -->
+        <header class="header">
+            <h1 class="title">Spin to win</h1>
+            <p class="subtitle">iPhone 16 Pro</p>
+        </header>
+
+        <!-- Contenedor de la ruleta -->
+        <div class="wheel-container">
+            <div class="wheel-pointer"></div>
+            <canvas id="wheel" width="350" height="350"></canvas>
+            <button id="spinButton" class="spin-button">SPIN</button>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="info-box">
+            <p>🎁 ¡Todos nuestros usuarios son ganadores!</p>
+            <p>Gira la ruleta y descubre tu premio</p>
+        </div>
+    </div>
+
+    <!-- Modal de Premio -->
+    <div id="prizeModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="success-icon">★</div>
+                <h2>¡Te uniste con éxito!</h2>
+                <p class="modal-subtitle">Obtener el 1 oct 9:30 pm</p>
+            </div>
+
+            <div class="prize-card">
+                <div class="discount-badge">
+                    <span class="discount-text">99%</span>
+                    <span class="off-text">OFF</span>
+                </div>
+                <img src="iphone.png" alt="iPhone 16 Pro" class="prize-image" id="prizeImage">
+                <div class="prize-details">
+                    <p class="prize-name">Oferta subvencionada iPhone 16 Pro</p>
+                    <div class="price-container">
+                        <span class="current-price">$1,000</span>
+                        <span class="original-price">$2,000.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-section">
+                <div class="code-label">CODE:</div>
+                <div class="code-value">
+                    <span id="promoCode">QZXY2G8</span>
+                    <button class="copy-button" id="copyButton">📋</button>
+                </div>
+            </div>
+
+            <div class="instructions">
+                <p>Busca "<strong>subvenciones especiales en Temu</strong>" para encontrar el producto subvencionado y
+                    completa tu pedido antes de que termine la promoción. Aplica el código promocional automáticamente.
+                </p>
+            </div>
+
+            <button class="claim-button" id="claimButton">RECLAMAR AHORA</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
