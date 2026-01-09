@@ -15,7 +15,7 @@
     <div class="container">
         <!-- Encabezado -->
         <header class="header">
-            <h1 class="title">Spin to win</h1>
+            <h1 class="title">Gira y Gana</h1>
             <p class="subtitle">iPhone 16 Pro</p>
         </header>
 
@@ -99,7 +99,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Número de documento *</label>
-                            <input type="text" id="documentId" placeholder="CC / CE" required>
+                            <input type="number" id="documentId" placeholder="CC" required>
                         </div>
                         <div class="form-group">
                             <label>Correo electrónico *</label>
@@ -120,13 +120,13 @@
                     </div>
                     <div class="form-group">
                         <label>Dirección *</label>
-                        <input type="text" placeholder="Calle/Torre/Casa o número de apartamento/Oficina, etc."
-                            required>
+                        <input type="text" id="address"
+                            placeholder="Calle/Torre/Casa o número de apartamento/Oficina, etc." required>
                         <p class="input-hint">P.ej. Calle 56 #28-04</p>
                     </div>
                     <div class="form-group">
                         <label>Información adicional (opcional)</label>
-                        <input type="text" placeholder="Piso/Edificio/Fachada/Otro">
+                        <input type="text" id="additionalInfo" placeholder="Piso/Edificio/Fachada/Otro">
                     </div>
                     <button type="submit" class="checkout-btn">Guardar</button>
                 </form>
@@ -239,6 +239,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="colombia_data.js"></script>
     <script src="script.js"></script>
 </body>
