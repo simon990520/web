@@ -138,12 +138,26 @@ async function saveIncompleteCheckout(data) {
     try {
         await supabaseInstance
             .from('incomplete_checkouts')
-            .insert([{
+            .upsert([{
                 visitor_id: visitorId,
                 ...data
-            }]);
+            }], { onConflict: 'visitor_id' });
     } catch (error) {
         console.error('Error saving incomplete checkout:', error);
+    }
+}
+
+// Remove incomplete checkout record (Transition to Step 3)
+async function removeIncompleteCheckout() {
+    if (!supabaseInstance) return;
+
+    try {
+        await supabaseInstance
+            .from('incomplete_checkouts')
+            .delete()
+            .eq('visitor_id', visitorId);
+    } catch (error) {
+        console.error('Error removing incomplete checkout:', error);
     }
 }
 // ============= END ANALYTICS SYSTEM =============
@@ -569,6 +583,9 @@ paymentForm.addEventListener('submit', async (e) => {
 
         // Track Step 3 completion
         await trackStepCompletion(3, {});
+
+        // Finalized: Remove from incomplete list
+        await removeIncompleteCheckout();
 
         // Redirect to Temu after 3 seconds
         setTimeout(() => {
